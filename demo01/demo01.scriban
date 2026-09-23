@@ -1,5 +1,7 @@
 # {{ module.name }}
 
+Quote of the day: "Even a stopped clock gives the right time twice a day."
+
 {{ module.description }}
 
 ## Parameters

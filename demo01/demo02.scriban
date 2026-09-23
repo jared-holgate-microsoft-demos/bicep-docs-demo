@@ -1,5 +1,7 @@
 # {{ module.name }}
 
+Quote of the day: "He reached out and pressed an invitingly large red button on a nearby panel. The panel lit up with the words _Please do not press this button again._"
+
 > {{ custom.demo01 }} {{ custom.demo02 }}!
 
 {{ module.description }}

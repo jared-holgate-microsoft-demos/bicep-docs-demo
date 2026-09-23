@@ -1,0 +1,39 @@
+{{~ # object.to_json writes each value as valid JSON, including quotes, escaping and null. ~}}
+{
+  "name": {{ module.name | object.to_json }},
+  "description": {{ module.description | object.to_json }},
+  "quoteOfTheDay": "I've seen things you people wouldn't believe. Attack ships on fire off the shoulder of Orion. I watched C-beams glitter in the dark near the Tannhäuser Gate. All those moments will be lost in time, like tears in rain. Time to die.",
+  "greeting": {{ (custom.demo01 + " " + custom.demo02 + "!") | object.to_json }},
+  "owner": {{ custom.owner | object.to_json }},
+  "supportUrl": {{ custom.supportUrl | object.to_json }},
+  "version": {{ custom.version | object.to_json }},
+  "resourceTypes": [
+{{~ for resourceType in module.resourceTypes ~}}
+    {
+      "type": {{ resourceType.type | object.to_json }},
+      "existing": {{ resourceType.existing | object.to_json }}
+    }{{ if !for.last }},{{ end }}
+{{~ end ~}}
+  ],
+  "parameters": [
+{{~ for parameter in module.parameters ~}}
+    {
+      "name": {{ parameter.name | object.to_json }},
+      "type": {{ parameter.type | object.to_json }},
+      "required": {{ parameter.required | object.to_json }},
+      "description": {{ parameter.description | object.to_json }},
+      "defaultValue": {{ parameter.defaultValue | object.to_json }},
+      "allowedValues": {{ parameter.allowedValues | object.to_json }}
+    }{{ if !for.last }},{{ end }}
+{{~ end ~}}
+  ],
+  "outputs": [
+{{~ for output in module.outputs ~}}
+    {
+      "name": {{ output.name | object.to_json }},
+      "type": {{ output.type | object.to_json }},
+      "description": {{ output.description | object.to_json }}
+    }{{ if !for.last }},{{ end }}
+{{~ end ~}}
+  ]
+}
