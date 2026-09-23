@@ -12,3 +12,8 @@ bicep docs generate ./demo-module/connection/main.bicep
 bicep docs generate --pattern ./demo-module/**/main.bicep
 ```
 
+## Use a custom template file
+
+```pwsh
+bicep docs generate --pattern ./demo-module/**/main.bicep --template-file ./avm.scriban
+```
