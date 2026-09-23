@@ -1,25 +1,99 @@
 {{~ func output_type(output) ~}}
-{{~ if string.contains custom.typelessOutputs ("|" + output.name + "|") ~}}
-{{~ ret "" ~}}
-{{~ end ~}}
-{{~ if output.secure && output.type == "string" ~}}
-{{~ ret "securestring" ~}}
-{{~ end ~}}
-{{~ if output.secure && output.type == "object" ~}}
-{{~ ret "secureObject" ~}}
-{{~ end ~}}
 {{~ if output.type == "any" ~}}
 {{~ ret "" ~}}
 {{~ end ~}}
-{{~ ret output.type ~}}
+{{~ ret doc_type output ~}}
 {{~ end ~}}
-# {{ module.name }} `[{{ custom.primaryResourceType }}]`
+{{~ func doc_type(item) ~}}
+{{~ if item.secure && item.type == "string" ~}}
+{{~ ret "securestring" ~}}
+{{~ end ~}}
+{{~ if item.secure && item.type == "object" ~}}
+{{~ ret "secureObject" ~}}
+{{~ end ~}}
+{{~ ret item.type ~}}
+{{~ end ~}}
+{{~ func md_cell(value) ~}}
+{{~ if value == null ~}}
+{{~ ret "" ~}}
+{{~ end ~}}
+{{~ ret (value | string.replace "\r\n" " " | string.replace "\n" " " | string.replace "|" "\\|") ~}}
+{{~ end ~}}
+{{~ func render_properties(items, indent) ~}}
+{{~ for item in items ~}}
+{{ indent }}- `{{ item.name }}` (`{{ item.type }}`){{ if item.required }}, required{{ end }}{{ if item.secure }}, secure{{ end }}{{ if item.description }}: {{ item.description }}{{ end }}
+{{~ if item.allowedValues.size > 0 ~}}
+{{ indent }}  - Allowed values: {{ for value in item.allowedValues }}`{{ value }}`{{ if !for.last }}, {{ end }}{{ end }}
+{{~ end ~}}
+{{~ if item.minValue != null ~}}
+{{ indent }}  - Min value: {{ item.minValue }}
+{{~ end ~}}
+{{~ if item.maxValue != null ~}}
+{{ indent }}  - Max value: {{ item.maxValue }}
+{{~ end ~}}
+{{~ if item.minLength != null ~}}
+{{ indent }}  - Min length: {{ item.minLength }}
+{{~ end ~}}
+{{~ if item.maxLength != null ~}}
+{{ indent }}  - Max length: {{ item.maxLength }}
+{{~ end ~}}
+{{~ if item.pattern != null ~}}
+{{ indent }}  - Pattern: `{{ item.pattern }}`
+{{~ end ~}}
+{{~ if item.truncated ~}}
+{{ indent }}  - Nested properties omitted because the type is recursive or exceeds the expansion limit.
+{{~ end ~}}
+{{~ if item.properties.size > 0 ~}}
+{{~ render_properties item.properties (indent + "  ") ~}}
+{{~ end ~}}
+{{~ if item.discriminator ~}}
+{{ indent }}  - Discriminator: `{{ item.discriminator.propertyName }}`
+{{~ for discriminatorCase in item.discriminator.cases ~}}
+{{ indent }}    - `{{ discriminatorCase.value }}`:
+{{~ render_properties discriminatorCase.properties (indent + "      ") ~}}
+{{~ end ~}}
+{{~ end ~}}
+{{~ end ~}}
+{{~ end ~}}
+{{~ # The registry reference is the module folder from 'avm/' onwards, e.g. avm/res/web/site/config. ~}}
+{{~ module_segments = module.path | string.replace "\\" "/" | string.split "/avm/" | array.last | string.split "/" | array.remove_at (-1) ~}}
+{{~ module_reference = "avm/" + (module_segments | array.join "/") ~}}
+{{~ module_symbol_name = "" ~}}
+{{~ for word in (module_segments | array.last | string.split "-") ~}}
+{{~ if word != "" ~}}
+{{~ if module_symbol_name == "" ~}}
+{{~ module_symbol_name = word | string.downcase ~}}
+{{~ else ~}}
+{{~ module_symbol_name = module_symbol_name + (word | string.downcase | string.capitalize) ~}}
+{{~ end ~}}
+{{~ end ~}}
+{{~ end ~}}
+{{~ # The primary resource is the shallowest deployed resource type, ignoring the standard AVM interface resources. ~}}
+{{~ primary_resource_type = null ~}}
+{{~ fallback_resource_type = null ~}}
+{{~ for resource_type in module.resourceTypes ~}}
+{{~ resource_type_name = resource_type.type | string.split "@" | array.first ~}}
+{{~ if resource_type.existing || resource_type_name == "Microsoft.Resources/deployments" ~}}
+{{~ continue ~}}
+{{~ end ~}}
+{{~ if fallback_resource_type == null ~}}
+{{~ fallback_resource_type = resource_type_name ~}}
+{{~ end ~}}
+{{~ if ["Microsoft.Authorization/locks", "Microsoft.Authorization/roleAssignments", "Microsoft.Insights/diagnosticSettings"] | array.contains resource_type_name ~}}
+{{~ continue ~}}
+{{~ end ~}}
+{{~ if primary_resource_type == null || (resource_type_name | string.split "/").size < (primary_resource_type | string.split "/").size ~}}
+{{~ primary_resource_type = resource_type_name ~}}
+{{~ end ~}}
+{{~ end ~}}
+{{~ primary_resource_type = primary_resource_type ?? fallback_resource_type ~}}
+# {{ module.name }} `[{{ primary_resource_type }}]`
 
 {{ module.description }}
 
 You can reference the module as follows:
 ```bicep
-module {{ custom.moduleSymbolName }} 'br/public:{{ custom.moduleReference }}:<version>' = {
+module {{ module_symbol_name }} 'br/public:{{ module_reference }}:<version>' = {
   params: { (...) }
 }
 ```
@@ -48,11 +122,110 @@ For examples, please refer to the [Usage Examples](#usage-examples) section.
 {{~ end ~}}
 - [Data Collection](#Data-Collection)
 
-{{ custom.resourceTypes }}
+## Resource Types
+{{~ if module.resourceTypes.size > 0 ~}}
 
-{{ custom.usageExamples }}
+| Resource Type | Existing |
+| :-- | :-- |
+{{~ for resourceType in module.resourceTypes ~}}
+| `{{ resourceType.type }}` | {{ if resourceType.existing }}Yes{{ else }}No{{ end }} |
+{{~ end ~}}
+{{~ else ~}}
 
-{{ custom.parameters }}
+_No resources are declared in this module._
+{{~ end ~}}
+{{~ if module.usageExamples.size > 0 ~}}
+
+## Usage Examples
+{{~ for example in module.usageExamples ~}}
+
+### Example {{ for.index + 1 }}: _{{ example.name }}_
+{{~ if example.description ~}}
+
+{{ example.description }}
+{{~ end ~}}
+
+{{ example.fence }}bicep
+{{ example.contents }}
+{{ example.fence }}
+{{~ end ~}}
+{{~ end ~}}
+
+## Parameters
+{{~ if module.parameters.size > 0 ~}}
+
+| Name | Type | Required | Description |
+| :-- | :-- | :-- | :-- |
+{{~ for parameter in module.parameters ~}}
+| `{{ parameter.name }}` | `{{ md_cell (doc_type parameter) }}` | {{ if parameter.required }}Yes{{ else }}No{{ end }} | {{ md_cell parameter.description }} |
+{{~ end ~}}
+{{~ for parameter in module.parameters ~}}
+{{~ if parameter.secure || parameter.defaultValue || parameter.allowedValues.size > 0 || parameter.minValue != null || parameter.maxValue != null || parameter.minLength != null || parameter.maxLength != null || parameter.pattern != null || parameter.truncated || parameter.properties.size > 0 || parameter.discriminator ~}}
+
+### `{{ parameter.name }}`
+{{~ if parameter.secure ~}}
+
+- Secure: Yes
+{{~ end ~}}
+{{~ if parameter.defaultValue ~}}
+
+{{~ if parameter.defaultValue | string.contains "\n" ~}}
+- Default value:
+
+{{ parameter.defaultValueFence }}bicep
+{{ parameter.defaultValue }}
+{{ parameter.defaultValueFence }}
+{{~ else ~}}
+- Default value: `{{ parameter.defaultValue }}`
+{{~ end ~}}
+{{~ end ~}}
+{{~ if parameter.allowedValues.size > 0 ~}}
+
+- Allowed values: {{ for value in parameter.allowedValues }}`{{ value }}`{{ if !for.last }}, {{ end }}{{ end }}
+{{~ end ~}}
+{{~ if parameter.minValue != null ~}}
+
+- Min value: {{ parameter.minValue }}
+{{~ end ~}}
+{{~ if parameter.maxValue != null ~}}
+
+- Max value: {{ parameter.maxValue }}
+{{~ end ~}}
+{{~ if parameter.minLength != null ~}}
+
+- Min length: {{ parameter.minLength }}
+{{~ end ~}}
+{{~ if parameter.maxLength != null ~}}
+
+- Max length: {{ parameter.maxLength }}
+{{~ end ~}}
+{{~ if parameter.pattern != null ~}}
+
+- Pattern: `{{ parameter.pattern }}`
+{{~ end ~}}
+{{~ if parameter.truncated ~}}
+
+- Nested properties omitted because the type is recursive or exceeds the expansion limit.
+{{~ end ~}}
+{{~ if parameter.properties.size > 0 ~}}
+
+- Properties:
+{{~ render_properties parameter.properties "  " ~}}
+{{~ end ~}}
+{{~ if parameter.discriminator ~}}
+
+- Discriminator: `{{ parameter.discriminator.propertyName }}`
+{{~ for discriminatorCase in parameter.discriminator.cases ~}}
+  - `{{ discriminatorCase.value }}`:
+{{~ render_properties discriminatorCase.properties "    " ~}}
+{{~ end ~}}
+{{~ end ~}}
+{{~ end ~}}
+{{~ end ~}}
+{{~ else ~}}
+
+_No parameters are declared in this module._
+{{~ end ~}}
 {{~ if module.exportedFunctions.size > 0 ~}}
 
 ## Exported functions
