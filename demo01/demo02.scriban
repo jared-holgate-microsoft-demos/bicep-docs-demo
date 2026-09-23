@@ -1,0 +1,25 @@
+# {{ module.name }}
+
+> {{ custom.demo01 }} {{ custom.demo02 }}!
+
+{{ module.description }}
+
+| Owner | Support | Version |
+| :-- | :-- | :-- |
+| {{ custom.owner }} | <{{ custom.supportUrl }}> | {{ custom.version }} |
+
+## Parameters
+
+| Name | Type | Required | Description |
+| :-- | :-- | :-- | :-- |
+{{~ for parameter in module.parameters ~}}
+| `{{ parameter.name }}` | `{{ parameter.type }}` | {{ if parameter.required }}Yes{{ else }}No{{ end }} | {{ parameter.description }} |
+{{~ end ~}}
+
+## Outputs
+
+| Name | Type | Description |
+| :-- | :-- | :-- |
+{{~ for output in module.outputs ~}}
+| `{{ output.name }}` | `{{ output.type }}` | {{ output.description }} |
+{{~ end ~}}

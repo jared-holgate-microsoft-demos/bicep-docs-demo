@@ -1,0 +1,31 @@
+# {{ module.name }}
+
+{{ module.description }}
+
+## Parameters
+
+| Name | Type | Required | Description |
+| :-- | :-- | :-- | :-- |
+{{~ for parameter in module.parameters ~}}
+| `{{ parameter.name }}` | `{{ parameter.type }}` | {{ if parameter.required }}Yes{{ else }}No{{ end }} | {{ parameter.description }} |
+{{~ end ~}}
+
+## Outputs
+
+| Name | Type | Description |
+| :-- | :-- | :-- |
+{{~ for output in module.outputs ~}}
+| `{{ output.name }}` | `{{ output.type }}` | {{ output.description }} |
+{{~ end ~}}
+
+## Usage examples
+{{~ for example in module.usageExamples ~}}
+
+### {{ example.name }}
+
+{{ example.description }}
+
+{{ example.fence }}bicep
+{{ example.contents }}
+{{ example.fence }}
+{{~ end ~}}
