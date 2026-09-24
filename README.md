@@ -62,12 +62,12 @@ To show that the output is real JSON, load it into PowerShell and list the param
 
 ## Use a complex custom template file with multiple modules - AVM example
 
-Generates AVM-style documentation for all 20 App Service modules in [demo02/avm](./demo02/avm) with a single command. The [avm.scriban](./demo02/avm.scriban) template works out everything a module's page needs from the module itself: the module's registry path (such as `br/public:avm/res/web/site:<version>`) comes from its folder, and its main resource type is picked from the resources it deploys. No inputs are needed. The nearby [bicepconfig.json](./demo02/bicepconfig.json) settings file holds AVM's standard rules for moving scope-specific usage examples from a parent module to its child modules.
+Generates AVM-style documentation for all 20 App Service modules in [demo05/avm](./demo05/avm) with a single command. The [avm.scriban](./demo05/avm.scriban) template works out everything a module's page needs from the module itself: the module's registry path (such as `br/public:avm/res/web/site:<version>`) comes from its folder, and its main resource type is picked from the resources it deploys. No inputs are needed. The nearby [bicepconfig.json](./demo05/bicepconfig.json) settings file holds AVM's standard rules for moving scope-specific usage examples from a parent module to its child modules.
 
 ```pwsh
 bicep docs generate `
-    --pattern ./demo02/avm/**/main.bicep `
-    --template-file ./demo02/avm.scriban
+    --pattern ./demo05/avm/**/main.bicep `
+    --template-file ./demo05/avm.scriban
 ```
 
 ## Clean up
@@ -76,5 +76,5 @@ Deletes every file the demos generate, so you can run them again from a clean st
 
 ```pwsh
 Remove-Item ./demo01/module/README.md, ./demo01/module/module.json -ErrorAction SilentlyContinue
-Get-ChildItem ./demo02/avm -Filter README.md -Recurse | Remove-Item
+Get-ChildItem ./demo05/avm -Filter README.md -Recurse | Remove-Item
 ```
