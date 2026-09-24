@@ -1,5 +1,8 @@
 {
   "documentation": {
+    "template": {
+      "file": "avm.scriban"
+    },
     "examples": {
       "reassignments": [
         {
